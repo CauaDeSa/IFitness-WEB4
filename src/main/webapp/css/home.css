@@ -1,0 +1,7 @@
+@charset "UTF-8";
+
+td img{
+	width: 30px;
+	height: 30px;
+	filter: invert(1);
+}
