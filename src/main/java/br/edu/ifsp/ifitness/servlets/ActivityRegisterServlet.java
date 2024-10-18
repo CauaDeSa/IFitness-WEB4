@@ -3,15 +3,12 @@ package br.edu.ifsp.ifitness.servlets;
 import java.io.IOException;
 import java.time.LocalDate;
 
-
-import com.google.gson.Gson;
-
 import br.edu.ifsp.ifitness.model.Activity;
 import br.edu.ifsp.ifitness.model.ActivityType;
 import br.edu.ifsp.ifitness.model.User;
-import br.edu.ifsp.ifitness.model.util.activities.ActivitiesReader;
-import br.edu.ifsp.ifitness.model.util.activities.ActivitiesWriter;
-
+import br.edu.ifsp.ifitness.model.util.DataSourceSearcher;
+import br.edu.ifsp.ifitness.model.util.activities.ActivityDao;
+import com.google.gson.Gson;
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -35,7 +32,7 @@ public class ActivityRegisterServlet extends HttpServlet {
 		ActivityType type = ActivityType.valueOf(req.getParameter("type"));
 		LocalDate date = LocalDate.parse(req.getParameter("date"));
 		Double distance = Double.parseDouble(req.getParameter("distance"));
-		Double duration = Double.parseDouble(req.getParameter("duration"));
+		Integer duration = Integer.parseInt(req.getParameter("duration"));
 		String url;
 		HttpSession session = req.getSession(false);
 
@@ -46,13 +43,15 @@ public class ActivityRegisterServlet extends HttpServlet {
 		activity.setDistance(distance);
 		activity.setDuration(duration);
 		activity.setUser(user);
+		ActivityDao activityDao = new ActivityDao(DataSourceSearcher.getInstance().getDataSource());
+
 		if (id == 0) {
-			if (ActivitiesWriter.write(activity)) {
+			if (activityDao.save(activity)) {
 				req.setAttribute("result", "registered");
 			}
 		} else {
 			activity.setId(id);
-			if (ActivitiesWriter.update(activity)) {
+			if (activityDao.update(activity)) {
 				req.setAttribute("result", "registered");
 			}
 		}
@@ -68,7 +67,8 @@ public class ActivityRegisterServlet extends HttpServlet {
 		Long id = Long.parseLong(req.getParameter("activity-id"));
 		String url = null;
 
-		Activity activity = ActivitiesReader.findById(id);
+		ActivityDao activityDao = new ActivityDao(DataSourceSearcher.getInstance().getDataSource());
+		Activity activity = activityDao.getActivityById(id);
 		RequestDispatcher dispatcher = null;
 		if(activity != null) {
 			if(action.equals("update")) {
@@ -78,7 +78,7 @@ public class ActivityRegisterServlet extends HttpServlet {
 				dispatcher.forward(req, resp);
 			}
 			if(action.equals("remove")) {
-				Boolean response = ActivitiesWriter.delete(activity);
+				Boolean response = activityDao.delete(activity);
 				Gson gson = new Gson();
 				String json = gson.toJson(response);
 				resp.setContentType("application/json");
@@ -90,7 +90,6 @@ public class ActivityRegisterServlet extends HttpServlet {
 			dispatcher.forward(req, resp);
 		}
 
-		
 	}
 
 }
